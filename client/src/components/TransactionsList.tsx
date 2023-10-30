@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { GetAllTransactions } from '../queries';
-import { Transaction, TransactionsData } from '../types';
+import { Actions, TransactionsData } from "../types";
 import { navigate } from './NaiveRouter';
+import {formatEther } from "ethers";
+import { useDispatch, useSelector } from "react-redux";
+import { selectTransactions } from "../store/selectors";
 
 const TransactionList: React.FC = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const transactions = useSelector(selectTransactions);
+  const dispatch = useDispatch();
+
+  // const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const { loading, error, data } = useQuery<TransactionsData>(GetAllTransactions);
 
   useEffect(() => {
     if (data && data.getAllTransactions) {
-      setTransactions(data.getAllTransactions);
+      dispatch({
+        type: Actions.SetTransactions,
+        payload: data.getAllTransactions,
+      });
     }
   }, [data]);
 
@@ -44,8 +53,13 @@ const TransactionList: React.FC = () => {
           {!!transactions.length ? (
             <>
               {transactions.map(({ hash, to, from, value }) => (
-                <div key={hash} className="bg-white shadow-sm p-4 md:p-5 border rounded border-gray-300 mt-3 hover:border-blue-500 cursor-pointer" onClick={() => handleNavigate(hash)}>
-                  <span className="font-bold">{value} ETH</span> sent from <span className="font-bold">{from}</span> to <span className="font-bold">{to}</span>
+                <div
+                  key={hash}
+                  className="bg-white shadow-sm p-4 md:p-5 border rounded border-gray-300 mt-3 hover:border-blue-500 cursor-pointer"
+                  onClick={() => hash && handleNavigate(hash)}
+                >
+                  <span className="font-bold">{formatEther(value)} ETH</span> sent from <span className="font-bold">{from}</span> to
+                  <span className="font-bold">{to}</span>
                 </div>
               ))}
             </>
